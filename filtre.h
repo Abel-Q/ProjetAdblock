@@ -18,7 +18,7 @@ struct Liste{
 
 int filtre(Liste *, char *);
 Liste* creationBlackliste(char *);
+void afficherListe(Liste *);
 /*Liste *initialisation();
 void ajout(Liste *, char * );
-void afficherListe(Liste *);
 */

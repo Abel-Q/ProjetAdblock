@@ -69,13 +69,19 @@ Liste * creationBlackliste(char * fichier){
     blacklist = fopen(fichier,"r");
 
     Liste * liste = initialisation();
-    char * badURL;
+    char * badURLTemp;
     while (feof(blacklist) == 0){
-      badURL= (char *)malloc(100000);
-      fscanf(blacklist,"%s\n",badURL);
+      badURLTemp= (char *)malloc(100000);
+      fscanf(blacklist,"%s\n",badURLTemp);
+      char * badURL;
+      badURL = (char *)malloc(strlen(badURLTemp)+1);
+      strcpy(badURL, badURLTemp);
+      //printf("sizeof(badURL) = %lu, sizeof(badURLTemp) = %lu\n",sizeof(badURL), sizeof(badURLTemp));
       ajout(liste,badURL);
       //printf("%s\n", badURL);
+      free(badURLTemp);
       free(badURL);
+
     }
     //afficherListe(liste);
     printf("Blacklist cree\n");
