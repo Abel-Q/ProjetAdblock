@@ -8,7 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <netdb.h>
-#define MAXLINE 353
+#define MAXLINE 10000
 
 /*
 * get_host()
@@ -35,10 +35,7 @@ int main(int argc, char** argv){
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
 	char* host;
-	char buf[BUF_SIZE];
-	 struct sockaddr_storage peer_addr;
-	socklen_t peer_addr_len;
-    	ssize_t nread;
+	
 
 	/*
 		Ouvrir une socket (a tcp socket)
@@ -81,7 +78,7 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 	
-	while((retread=recv(clientSocket,fromNav,MAXLINE,(int)NULL))>0){
+	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
 		printf("corr: %s",fromNav);
 		host = get_host(fromNav);
 		printf("%s\n", host);
@@ -125,26 +122,38 @@ int main(int argc, char** argv){
 		}
 		freeaddrinfo(result);//on en a plus besoin
 		//envoie de la requête au serveur		
-		n = send(sfd,fromNav,strlen(fromNav),(int)NULL);
+		n = send(sfd,fromNav,sizeof(fromNav),(int)NULL);
 		if(n==-1){
 			perror("probleme send");
+			close(serverSocket);
+			close(clientSocket);
+			close(sfd);	
+			exit(errno);	
 		}
 		//reception du retour du serveur        		
-		if((n = recv(sfd, buf,sizeof(buf), (int)NULL)) < 0)
+		if((n = recv(sfd, fromServ,sizeof(fromServ), (int)NULL)) < 0)
 		{
    			perror("recv()");
-    			exit(errno);
+			close(serverSocket);
+			close(clientSocket); 
+			close(sfd);   			
+			exit(errno);
 		}           
-		printf("%s\n",buf);
+		printf("%s\n",fromServ);
 		//renvoi du retour serveur au navigateur
-		if((n = send(clientSocket,buf,sizeof(buf),(int)NULL) < 0)){
+		if((n = send(clientSocket,fromServ,sizeof(fromServ),(int)NULL) < 0)){
 			perror("send()");
+			close(serverSocket);
+			close(clientSocket);
+			close(sfd);			
 			exit(errno);
 		}
+		close(sfd);
 	
 	}
 	close(serverSocket);
 	close(clientSocket);
+	
 
 }
 
