@@ -28,13 +28,17 @@ char * get_host(char * httpRequest){
 	return host;
 }
 int main(int argc, char** argv){
-	int serverSocket,clientSocket;/*socket d'écoute et de dialogue*/
+	int serverSocket,clientSocket,sfd;/*socket d'écoute et de dialogue*/
 	int n,retread,clilen,childpid,servlen,s;
 
 	struct sockaddr_in serv_addr,cli_addr;
-	char fromClient[MAXLINE];
-	char fromUser[MAXLINE];
+	char fromNav[MAXLINE];
+	char fromServ[MAXLINE];
 	char* host;
+	char buf[BUF_SIZE];
+	 struct sockaddr_storage peer_addr;
+	socklen_t peer_addr_len;
+    	ssize_t nread;
 
 	/*
 		Ouvrir une socket (a tcp socket)
@@ -50,7 +54,7 @@ int main(int argc, char** argv){
 		On lie la socket a l'adresse
 	*/
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	int portno = 8081;
+	int portno = 8080;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -77,63 +81,68 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 	
-
-	//Envoi des données : discution 
-
-	if((n=writen(clientSocket,"Bonjour\n",strlen("Bonjour\n")) ) != strlen("Bonjour\n")){
-		perror("serveecho : erreur writen");
-	}
-
-	while((retread=readn(clientSocket,fromClient,MAXLINE))>0){
-		printf("corr: %s",fromClient);
-		host = get_host(fromClient);
+	while((retread=recv(clientSocket,fromNav,MAXLINE,0))>0){
+		printf("corr: %s",fromNav);
+		host = get_host(fromNav);
 		printf("%s\n", host);
-		if(strcmp(fromClient,"Au revoir\n") == 0)
-			break; // fin de la lecture
-		//Saisir le message de l'util
+
 		//récupération de l'adresse ip du serveur cherché
 		struct addrinfo hints;
-		struct addrinfo *result, *rp;
+		struct addrinfo *result = NULL;
+		struct addrinfo *rp;
 
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-		hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
-		hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
-		hints.ai_protocol = 0;          /* Any protocol */
-		hints.ai_canonname = NULL;
-		hints.ai_addr = NULL;
-		hints.ai_next = NULL;
+		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
 	
-		s = getaddrinfo(host,NULL,&hints,&result);
+		s = getaddrinfo(host,"80",&hints,&result);
 		if (s != 0) {
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
 			exit(EXIT_FAILURE);
 	    	}
-
+	
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
-			//sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
-			printf("%d\n",rp->ai_family);
+    			sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
+        		//création d'une socket
+			if ((sfd = socket(rp->ai_family, rp->ai_socktype,
+        			rp->ai_protocol)) == -1) {
+        			perror("socket");
+        			continue;
+    			}
+			//connection avec le serveur
+			if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == -1) {
+     				perror("connect");
+				close(sfd);
+				continue;
+			}
+			
+        		break;
 		}
-				
-
-		printf("vous : ");
-		if(fgets(fromUser,MAXLINE,stdin)==NULL){
-			perror("error fgets\n");
+		//on s'assure qu'on a au moins trouver une adresse à contacter
+		if(rp==NULL){
+			perror("Could not bind");
 			exit(1);
 		}
-
-		//Envoyer le message au client
-
-		if((n=writen(clientSocket, fromUser,strlen(fromUser))) != strlen(fromUser)){
-			printf("Erreur de writen");
-			exit(1);
+		freeaddrinfo(result);//on en a plus besoin
+		//envoie de la requête au serveur		
+		n = send(sfd,fromNav,strlen(fromNav),0);
+		if(n==-1){
+			perror("probleme send");
 		}
+		//reception du retour du serveur        		
+		if((n = recv(sfd, buf, BUF_SIZE, 0)) < 0)
+		{
+   			perror("recv()");
+    			exit(errno);
+		}           
+		printf("%s\n",buf);
+		//renvoi du retour serveur au navigateur
+		if((n = send(clientSocket,buf,BUF_SIZE,0) < 0)){
+			perror("send()");
+			exit(errno);
+		}
+	
 	}
-	if(retread<0){
-		perror("erreur readline \n");
-		//exit(1);
-	}
-
 	close(serverSocket);
 	close(clientSocket);
 
