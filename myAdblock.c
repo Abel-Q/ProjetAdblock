@@ -157,7 +157,9 @@ int main(int argc, char** argv){
 		memset(fromServ,'\0',sizeof(fromServ));
 		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
 			fromServ[n] = '\0';
-
+			if (correctHost !=0){
+				strcpy(fromServ,"pub");
+			}
 			printf("\n%s\n",fromServ);
 			send(clientSocket,fromServ,sizeof(fromServ),0);
 			memset(fromServ,'\0',sizeof(fromServ));
