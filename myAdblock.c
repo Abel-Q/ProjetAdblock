@@ -77,9 +77,8 @@ int main(int argc, char** argv){
 		perror("servecho : erreur accept \n");
 		exit(1);
 	}
-	
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
-		printf("corr: %s",fromNav);
+		printf("%s",fromNav);
 		host = get_host(fromNav);
 		printf("%s\n", host);
 
@@ -121,7 +120,8 @@ int main(int argc, char** argv){
 			exit(1);
 		}
 		freeaddrinfo(result);//on en a plus besoin
-		//envoie de la requête au serveur		
+		//envoie de la requête au serveur	
+		printf("\n envoi de la requête au serveur");	
 		n = send(sfd,fromNav,sizeof(fromNav),(int)NULL);
 		if(n==-1){
 			perror("probleme send");
@@ -130,7 +130,18 @@ int main(int argc, char** argv){
 			close(sfd);	
 			exit(errno);	
 		}
-		//reception du retour du serveur        		
+		//reception du retour du serveur
+		printf("\n récupération de la reponse du serveur");
+		memset(fromServ,'\0',sizeof(fromServ));		
+		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
+			fromServ[n] = '\0';
+			
+			printf("\n%s\n",fromServ);
+			send(clientSocket,fromServ,sizeof(fromServ),0);
+			memset(fromServ,'\0',sizeof(fromServ));
+		}       		
+		
+		/*
 		if((n = recv(sfd, fromServ,sizeof(fromServ), (int)NULL)) < 0)
 		{
    			perror("recv()");
@@ -138,17 +149,19 @@ int main(int argc, char** argv){
 			close(clientSocket); 
 			close(sfd);   			
 			exit(errno);
-		}           
-		printf("%s\n",fromServ);
+		}
+		//printf("\n%s\n",fromServ);
 		//renvoi du retour serveur au navigateur
+		printf("\n renvoi de la reponse au navigateur");
 		if((n = send(clientSocket,fromServ,sizeof(fromServ),(int)NULL) < 0)){
 			perror("send()");
 			close(serverSocket);
 			close(clientSocket);
 			close(sfd);			
 			exit(errno);
-		}
+		}*/
 		close(sfd);
+		//break;
 	
 	}
 	close(serverSocket);
