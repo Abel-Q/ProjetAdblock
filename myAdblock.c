@@ -8,6 +8,8 @@
 #include <string.h>
 #include <errno.h>
 #include <netdb.h>
+#include "filtre.h"
+
 #define MAXLINE 10000
 
 /*
@@ -27,6 +29,11 @@ char * get_host(char * httpRequest){
 	host[j-6+1] = '\0';
 	return host;
 }
+
+/*char * get_get(char * httpRequest){
+
+}*/
+
 int main(int argc, char** argv){
 	int serverSocket,clientSocket,sfd;/*socket d'écoute et de dialogue*/
 	int n,retread,clilen,childpid,servlen,s;
@@ -35,7 +42,13 @@ int main(int argc, char** argv){
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
 	char* host;
-	
+
+	/*
+		Création de la liste noir
+	*/
+
+	Liste * liste;
+	liste = creationBlackliste("./BlacklistTest.txt");
 
 	/*
 		Ouvrir une socket (a tcp socket)
@@ -77,11 +90,17 @@ int main(int argc, char** argv){
 		perror("servecho : erreur accept \n");
 		exit(1);
 	}
-	
+
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
 		printf("corr: %s",fromNav);
 		host = get_host(fromNav);
 		printf("%s\n", host);
+
+		//vérification de l'host
+		int correctHost;
+		correctHost = filtre(liste,fromNav);
+		printf("correctHost : %d\n", correctHost);
+		printf("fromNav: %s --- fin\n",fromNav );
 
 		//récupération de l'adresse ip du serveur cherché
 		struct addrinfo hints;
@@ -91,28 +110,28 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-	
+
 		s = getaddrinfo(host,"80",&hints,&result);
 		if (s != 0) {
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
 			exit(EXIT_FAILURE);
 	    	}
-	
+
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
-    			sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
+    		sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
         		//création d'une socket
 			if ((sfd = socket(rp->ai_family, rp->ai_socktype,
         			rp->ai_protocol)) == -1) {
         			perror("socket");
         			continue;
     			}
-			//connection avec le serveur   
+			//connection avec le serveur
 			if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == -1) {
      				perror("connect");
 				close(sfd);
 				continue;
 			}
-			
+
         		break;
 		}
 		//on s'assure qu'on a au moins trouver une adresse à contacter
@@ -121,39 +140,46 @@ int main(int argc, char** argv){
 			exit(1);
 		}
 		freeaddrinfo(result);//on en a plus besoin
-		//envoie de la requête au serveur		
+		//envoie de la requête au serveur
+
 		n = send(sfd,fromNav,sizeof(fromNav),(int)NULL);
 		if(n==-1){
 			perror("probleme send");
 			close(serverSocket);
 			close(clientSocket);
-			close(sfd);	
-			exit(errno);	
+			close(sfd);
+			exit(errno);
 		}
-		//reception du retour du serveur        		
+		//reception du retour du serveur
 		if((n = recv(sfd, fromServ,sizeof(fromServ), (int)NULL)) < 0)
 		{
    			perror("recv()");
 			close(serverSocket);
-			close(clientSocket); 
-			close(sfd);   			
+			close(clientSocket);
+			close(sfd);
 			exit(errno);
-		}           
-		printf("%s\n",fromServ);
+		}
+		printf("fromServ : %s\n",fromServ);
+
+		//modification du paquet envoyer au navigateur si pub
+		if (correctHost !=0){
+			strcpy(fromServ,"pub");
+		}
+
 		//renvoi du retour serveur au navigateur
 		if((n = send(clientSocket,fromServ,sizeof(fromServ),(int)NULL) < 0)){
 			perror("send()");
 			close(serverSocket);
 			close(clientSocket);
-			close(sfd);			
+			close(sfd);
 			exit(errno);
 		}
 		close(sfd);
-	
+
 	}
 	close(serverSocket);
 	close(clientSocket);
-	
+
 
 }
 
@@ -163,7 +189,7 @@ int writen (fd, ptr, nbytes)
      char *ptr;
      int nbytes;
 {
-  int nleft, nwritten; 
+  int nleft, nwritten;
   char *tmpptr;
 
   nleft = nbytes;
@@ -198,7 +224,7 @@ int readn (fd, ptr, maxlen)
 
   nleft = maxlen;
   tmpptr=ptr;
-  
+
   while (nleft >0) {
     nreadn = read (fd,ptr, nleft);
     if (nreadn < 0) {
@@ -210,7 +236,7 @@ int readn (fd, ptr, maxlen)
       }
     }
     else if(nreadn == 0){
-      /* EOF */ 
+      /* EOF */
       break ;
     }
     nleft -= nreadn;
@@ -227,13 +253,13 @@ int readline (fd, ptr, maxlen)
      char *ptr;
      int maxlen;
 {
-  
-  int n, rc, retvalue, encore=1;  char c, *tmpptr; 
+
+  int n, rc, retvalue, encore=1;  char c, *tmpptr;
 
   tmpptr=ptr;
   for (n=1; (n < maxlen) && (encore) ; n++) {
     if ( (rc = read (fd, &c, 1)) ==1) {
-      *tmpptr++ =c; 
+      *tmpptr++ =c;
       if (c == '\n')  /* fin de ligne atteinte */
 	{encore =0; retvalue = n;}
     }
@@ -252,5 +278,3 @@ int readline (fd, ptr, maxlen)
   *tmpptr = '\0';  /* pour terminer la ligne */
   return (retvalue);
 }
-
-
