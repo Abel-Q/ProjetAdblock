@@ -176,33 +176,6 @@ int main(int argc, char** argv){
 			memset(fromServ,'\0',sizeof(fromServ));
 		}
 
-		/*
-
-		if((n = recv(sfd, fromServ,sizeof(fromServ), (int)NULL)) < 0)
-		{
-   			perror("recv()");
-			close(serverSocket);
-			close(clientSocket);
-			close(sfd);
-			exit(errno);
-		}
-
-		printf("fromServ : %s\n",fromServ);
-
-		//modification du paquet envoyer au navigateur si pub
-		if (correctHost !=0){
-			strcpy(fromServ,"pub");
-		}
-
-		//renvoi du retour serveur au navigateur
-		printf("\n renvoi de la reponse au navigateur");
-		if((n = send(clientSocket,fromServ,sizeof(fromServ),(int)NULL) < 0)){
-			perror("send()");
-			close(serverSocket);
-			close(clientSocket);
-			close(sfd);
-			exit(errno);
-		}*/
 		close(sfd);
 
 		//break;
