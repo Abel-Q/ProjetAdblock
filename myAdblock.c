@@ -42,7 +42,7 @@ int main(int argc, char** argv){
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
 	char buf[MAXLINE];
-	char* host;
+	char host[MAXLINE];
 
 	/*
 		Création de la liste noir
@@ -65,7 +65,7 @@ int main(int argc, char** argv){
 		On lie la socket a l'adresse
 	*/
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	int portno = 8082;
+	int portno = 8081;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -95,17 +95,12 @@ int main(int argc, char** argv){
 
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
 		
-		printf("%s",fromNav);
-		host = get_host(fromNav);
-		printf("%s\n", host);
-
-
 		//vérification de l'host
 		int correctHost;
 		correctHost = filtre(liste,fromNav);
 		printf("correctHost : %d\n", correctHost);
 		printf("fromNav: %s --- fin\n",fromNav );
-
+		
 		//récupération de l'adresse ip du serveur cherché
 		struct addrinfo hints;
 		struct addrinfo *result = NULL;
@@ -114,13 +109,10 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-
+		strcpy(host,get_host(fromNav));		
+		printf("%s\n", host);
 		s = getaddrinfo(host,"80",&hints,&result);
-		if (s != 0) {
-			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-			exit(EXIT_FAILURE);
-	    	}
-
+		printf("%d",s);
 
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -142,7 +134,7 @@ int main(int argc, char** argv){
 		}
 		//on s'assure qu'on a au moins trouver une adresse à contacter
 		if(rp==NULL){
-			perror("Could not bind");
+			perror("erreur getaddrinfo");
 			exit(1);
 		}
 
@@ -167,7 +159,7 @@ int main(int argc, char** argv){
 
 		memset(fromServ,'\0',sizeof(fromServ));
 		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
-			fromServ[n] = '\0';
+			//fromServ[n] = '\0';
 			if (correctHost !=0){
 				strcpy(fromServ,"pub");
 			}
