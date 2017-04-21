@@ -34,6 +34,7 @@ int main(int argc, char** argv){
 	struct sockaddr_in serv_addr,cli_addr;
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
+	char buf[MAXLINE];
 	char* host;
 	
 
@@ -51,7 +52,7 @@ int main(int argc, char** argv){
 		On lie la socket a l'adresse
 	*/
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	int portno = 8080;
+	int portno = 8082;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -77,10 +78,14 @@ int main(int argc, char** argv){
 		perror("servecho : erreur accept \n");
 		exit(1);
 	}
+
+
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
+		
 		printf("%s",fromNav);
 		host = get_host(fromNav);
 		printf("%s\n", host);
+
 
 		//récupération de l'adresse ip du serveur cherché
 		struct addrinfo hints;
@@ -96,7 +101,9 @@ int main(int argc, char** argv){
 			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
 			exit(EXIT_FAILURE);
 	    	}
-	
+
+
+
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
     			sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
         		//création d'une socket
@@ -119,6 +126,8 @@ int main(int argc, char** argv){
 			perror("Could not bind");
 			exit(1);
 		}
+
+
 		freeaddrinfo(result);//on en a plus besoin
 		//envoie de la requête au serveur	
 		printf("\n envoi de la requête au serveur");	
@@ -130,39 +139,24 @@ int main(int argc, char** argv){
 			close(sfd);	
 			exit(errno);	
 		}
+
+
 		//reception du retour du serveur
 		printf("\n récupération de la reponse du serveur");
-		memset(fromServ,'\0',sizeof(fromServ));		
-		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
-			fromServ[n] = '\0';
-			
-			printf("\n%s\n",fromServ);
-			send(clientSocket,fromServ,sizeof(fromServ),0);
-			memset(fromServ,'\0',sizeof(fromServ));
+		memset(buf,'\0',sizeof(buf));
+		while((n=recv(sfd,buf,sizeof(buf),0)) > 0){
+			buf[n] = '\0';
+			printf("\n%s\n",buf);
+			//strcat(fromServ,buf);
+			send(clientSocket,buf,sizeof(buf),(int)NULL);
+			memset(buf,'\0',sizeof(fromServ));
 		}       		
 		
-		/*
-		if((n = recv(sfd, fromServ,sizeof(fromServ), (int)NULL)) < 0)
-		{
-   			perror("recv()");
-			close(serverSocket);
-			close(clientSocket); 
-			close(sfd);   			
-			exit(errno);
-		}
-		//printf("\n%s\n",fromServ);
-		//renvoi du retour serveur au navigateur
-		printf("\n renvoi de la reponse au navigateur");
-		if((n = send(clientSocket,fromServ,sizeof(fromServ),(int)NULL) < 0)){
-			perror("send()");
-			close(serverSocket);
-			close(clientSocket);
-			close(sfd);			
-			exit(errno);
-		}*/
 		close(sfd);
 		//break;
 	
+
+
 	}
 	close(serverSocket);
 	close(clientSocket);
