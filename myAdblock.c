@@ -10,7 +10,7 @@
 #include <netdb.h>
 #include "filtre.h"
 
-#define MAXLINE 10000
+#define MAXLINE 1000000
 
 /*
 * get_host()
@@ -111,7 +111,7 @@ int main(int argc, char** argv){
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
 		strcpy(host,get_host(fromNav));		
 		printf("%s\n", host);
-		s = getaddrinfo(host,"80",&hints,&result);
+		s = getaddrinfo("www.01net.com","80",&hints,&result);
 		printf("%d",s);
 
 
@@ -128,9 +128,11 @@ int main(int argc, char** argv){
      				perror("connect");
 				close(sfd);
 				continue;
+			}else{
+				break;
 			}
 
-        		break;
+        		
 		}
 		//on s'assure qu'on a au moins trouver une adresse à contacter
 		if(rp==NULL){
@@ -158,19 +160,23 @@ int main(int argc, char** argv){
 		printf("\n récupération de la reponse du serveur");
 
 		memset(fromServ,'\0',sizeof(fromServ));
+		int i = 0;
 		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
-			//fromServ[n] = '\0';
+			fromServ[n] = '\0';
+			
 			if (correctHost !=0){
 				strcpy(fromServ,"pub");
 			}
+			i++;			
 			printf("\n%s\n",fromServ);
+			printf("\n\n%d",i);
 			send(clientSocket,fromServ,sizeof(fromServ),0);
 			memset(fromServ,'\0',sizeof(fromServ));
 		}
-
+		
 		close(sfd);
 
-		//break;
+		break;
 	
 
 
