@@ -10,7 +10,7 @@
 #include <netdb.h>
 #include "filtre.h"
 
-#define MAXLINE 10000
+#define MAXLINE 1000000
 
 /*
 * get_host()
@@ -41,7 +41,8 @@ int main(int argc, char** argv){
 	struct sockaddr_in serv_addr,cli_addr;
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
-	char* host;
+	char buf[MAXLINE];
+	char host[MAXLINE];
 
 	/*
 		Création de la liste noir
@@ -64,7 +65,7 @@ int main(int argc, char** argv){
 		On lie la socket a l'adresse
 	*/
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	int portno = 8080;
+	int portno = 8081;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -91,10 +92,8 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 
+
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
-		printf("%s",fromNav);
-		host = get_host(fromNav);
-		printf("%s\n", host);
 
 		//vérification de l'host
 		int correctHost;
@@ -110,12 +109,11 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+		strcpy(host,get_host(fromNav));
+		printf("%s\n", host);
+		s = getaddrinfo("www.01net.com","80",&hints,&result);
+		printf("%d",s);
 
-		s = getaddrinfo(host,"80",&hints,&result);
-		if (s != 0) {
-			fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-			exit(EXIT_FAILURE);
-	    	}
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
     		sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
@@ -130,15 +128,19 @@ int main(int argc, char** argv){
      				perror("connect");
 				close(sfd);
 				continue;
+			}else{
+				break;
 			}
 
-        		break;
+
 		}
 		//on s'assure qu'on a au moins trouver une adresse à contacter
 		if(rp==NULL){
-			perror("Could not bind");
+			perror("erreur getaddrinfo");
 			exit(1);
 		}
+
+
 		freeaddrinfo(result);//on en a plus besoin
 
 		printf("\n envoi de la requête au serveur");
@@ -151,53 +153,36 @@ int main(int argc, char** argv){
 			close(sfd);
 			exit(errno);
 		}
+
+
 		//reception du retour du serveur
 
 		printf("\n récupération de la reponse du serveur");
+
 		memset(fromServ,'\0',sizeof(fromServ));
+		int i = 0;
 		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
 			fromServ[n] = '\0';
+
 			if (correctHost !=0){
 				strcpy(fromServ,"pub");
 			}
+			i++;
 			printf("\n%s\n",fromServ);
+			printf("\n\n%d",i);
 			send(clientSocket,fromServ,sizeof(fromServ),0);
 			memset(fromServ,'\0',sizeof(fromServ));
 		}
 
-		/*
-
-		if((n = recv(sfd, fromServ,sizeof(fromServ), (int)NULL)) < 0)
-		{
-   			perror("recv()");
-			close(serverSocket);
-			close(clientSocket);
-			close(sfd);
-			exit(errno);
-		}
-
-		printf("fromServ : %s\n",fromServ);
-
-		//modification du paquet envoyer au navigateur si pub
-		if (correctHost !=0){
-			strcpy(fromServ,"pub");
-		}
-
-		//renvoi du retour serveur au navigateur
-		printf("\n renvoi de la reponse au navigateur");
-		if((n = send(clientSocket,fromServ,sizeof(fromServ),(int)NULL) < 0)){
-			perror("send()");
-			close(serverSocket);
-			close(clientSocket);
-			close(sfd);
-			exit(errno);
-		}*/
 		close(sfd);
 
-		//break;
+		break;
+
 
 
 	}
+
+	//fin while
 	close(serverSocket);
 	close(clientSocket);
 
