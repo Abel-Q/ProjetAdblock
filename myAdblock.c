@@ -42,7 +42,7 @@ int main(int argc, char** argv){
 	struct sockaddr_in serv_addr,cli_addr;
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
-	
+
 
 	/*
 		Création de la liste noir
@@ -65,7 +65,7 @@ int main(int argc, char** argv){
 		On lie la socket a l'adresse
 	*/
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	int portno = 8081;
+	int portno = 8080;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
@@ -93,8 +93,9 @@ int main(int argc, char** argv){
 	}
 
 
+
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),0))>0){
-		
+
 		//vérification de l'host
 		int correctHost;
 		correctHost = filtre(liste,fromNav);
@@ -109,15 +110,16 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-	
+
 		char *host = malloc(sizeof(host));
 		host = get_host(fromNav);
 		printf("host : %s\n", host);
-		
+		//char *test="www.01net.com";
+
 		s = getaddrinfo(host,"80",&hints,&result);
 		printf("\n%d",s);
 		free(host);
-		
+
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
     		sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
@@ -192,6 +194,3 @@ int main(int argc, char** argv){
 
 
 }
-
-
-
