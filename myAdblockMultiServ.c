@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <netdb.h>
 #include "filtre.h"
+#include <unistd.h>
+#include <sys/select.h>
 
 #define BUFSIZE 1500
 
@@ -200,8 +202,8 @@ if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) <0) {
  * Lier l'adresse  locale � la socket
  */
  memset( (char*) &serv_addr,0, sizeof(serv_addr) );
- serv_addr.sin_family = PF_INET;
- serv_addr.sin_addr.s_addr = htonl (INADDR_ANY);
+ serv_addr.sin_family = AF_INET;
+ serv_addr.sin_addr.s_addr = INADDR_ANY;
  serv_addr.sin_port = htons(atoi(argv[1]));
 
 
@@ -209,15 +211,13 @@ if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) <0) {
    perror ("servmulti : erreur bind\n");
    exit (1);
  }
-
+printf("av listen\n" );
 /* Param�trer le nombre de connexion "pending" */
  if (listen(sockfd, SOMAXCONN) <0) {
    perror ("servmulti : erreur listen\n");
    exit (1);
  }
-
-
-
+printf("ap listen\n" );
 	int tab_clients[FD_SETSIZE];
 	int maxfdp1, i, nbfd, sockli;
 	fd_set rset, pset;
@@ -225,14 +225,15 @@ if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) <0) {
 	//initialisation
 
 	maxfdp1 = sockfd+1;
-
-	for (i=0; i<FD_SETSIZE; i+1){
+	for (i=0; i<FD_SETSIZE; i++){
 		tab_clients[i]=-1;
 	}
+
 	FD_ZERO(&pset); FD_ZERO(&rset);
 	FD_SET(sockfd, &pset);
 
  for (;;) {
+	
 	pset =rset;
 	nbfd = select(maxfdp1, &pset, NULL,NULL,NULL);
 
@@ -276,7 +277,7 @@ if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) <0) {
         */
 
         while((retread=recv(newsockfd,fromNav,sizeof(fromNav),(int)NULL))>0){
-
+					printf("recv\n");
           //vérification de l'host
           int correctHost;
           correctHost = filtre(liste,fromNav);
