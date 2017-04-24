@@ -93,13 +93,8 @@ int main(int argc, char** argv){
 	}
 
 
-<<<<<<< HEAD
-	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
-
-=======
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),0))>0){
 		
->>>>>>> e8e5e2d9a07fde0a590b9bd97298f00962677df3
 		//vérification de l'host
 		int correctHost;
 		correctHost = filtre(liste,fromNav);
@@ -114,24 +109,15 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-<<<<<<< HEAD
-		strcpy(host,get_host(fromNav));
-		printf("%s\n", host);
-		s = getaddrinfo("www.01net.com","80",&hints,&result);
-		printf("%d",s);
-
-=======
-		
+	
 		char *host = malloc(sizeof(host));
 		host = get_host(fromNav);
 		printf("host : %s\n", host);
-		char *test="www.01net.com";
 		
 		s = getaddrinfo(host,"80",&hints,&result);
 		printf("\n%d",s);
 		free(host);
 		
->>>>>>> e8e5e2d9a07fde0a590b9bd97298f00962677df3
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
     		sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
