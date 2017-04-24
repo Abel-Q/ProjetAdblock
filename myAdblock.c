@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <netdb.h>
+#include <unistd.h>
 #include "filtre.h"
 
 #define MAXLINE 1000000
@@ -36,13 +37,12 @@ char * get_host(char * httpRequest){
 
 int main(int argc, char** argv){
 	int serverSocket,clientSocket,sfd;/*socket d'écoute et de dialogue*/
-	int n,retread,clilen,childpid,servlen,s;
+	int n,retread,clilen,s;
 
 	struct sockaddr_in serv_addr,cli_addr;
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
-	char buf[MAXLINE];
-	char host[MAXLINE];
+	
 
 	/*
 		Création de la liste noir
@@ -93,8 +93,13 @@ int main(int argc, char** argv){
 	}
 
 
+<<<<<<< HEAD
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),(int)NULL))>0){
 
+=======
+	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),0))>0){
+		
+>>>>>>> e8e5e2d9a07fde0a590b9bd97298f00962677df3
 		//vérification de l'host
 		int correctHost;
 		correctHost = filtre(liste,fromNav);
@@ -109,11 +114,24 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+<<<<<<< HEAD
 		strcpy(host,get_host(fromNav));
 		printf("%s\n", host);
 		s = getaddrinfo("www.01net.com","80",&hints,&result);
 		printf("%d",s);
 
+=======
+		
+		char *host = malloc(sizeof(host));
+		host = get_host(fromNav);
+		printf("host : %s\n", host);
+		char *test="www.01net.com";
+		
+		s = getaddrinfo(host,"80",&hints,&result);
+		printf("\n%d",s);
+		free(host);
+		
+>>>>>>> e8e5e2d9a07fde0a590b9bd97298f00962677df3
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
     		sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
@@ -145,7 +163,7 @@ int main(int argc, char** argv){
 
 		printf("\n envoi de la requête au serveur");
 
-		n = send(sfd,fromNav,sizeof(fromNav),(int)NULL);
+		n = send(sfd,fromNav,sizeof(fromNav),0);
 		if(n==-1){
 			perror("probleme send");
 			close(serverSocket);
@@ -190,97 +208,4 @@ int main(int argc, char** argv){
 }
 
 
-int writen (fd, ptr, nbytes)
-     int  fd;
-     char *ptr;
-     int nbytes;
-{
-  int nleft, nwritten;
-  char *tmpptr;
 
-  nleft = nbytes;
-  tmpptr=ptr;
-  while (nleft >0) {
-    nwritten = write (fd,ptr, nleft);
-    if (nwritten <=0) {
-      if(errno == EINTR)
-	nwritten=0;
-      else{
-	perror("probleme  dans write\n");
-	return(-1);
-      }
-    }
-    nleft -= nwritten;
-    ptr += nwritten;
-  }
-  return (nbytes);
-}
-
-
-/*
- * Lire  "n" octets à partir d'un descripteur de socket
- */
-int readn (fd, ptr, maxlen)
-     int  fd;
-     char *ptr;
-     int maxlen;
-{
-  char *tmpptr;
-  int nleft, nreadn;
-
-  nleft = maxlen;
-  tmpptr=ptr;
-
-  while (nleft >0) {
-    nreadn = read (fd,ptr, nleft);
-    if (nreadn < 0) {
-      if(errno == EINTR)
-	nreadn=0;
-      else{
-	perror("readn : probleme  dans read \n");
-	return(-1);
-      }
-    }
-    else if(nreadn == 0){
-      /* EOF */
-      break ;
-    }
-    nleft -= nreadn;
-    ptr += nreadn;
-  }
-  return (maxlen - nleft);
-}
-
-/*
- * Lire  une ligne terminee par \n à partir d'un descripteur de socket
- */
-int readline (fd, ptr, maxlen)
-     int  fd;
-     char *ptr;
-     int maxlen;
-{
-
-  int n, rc, retvalue, encore=1;  char c, *tmpptr;
-
-  tmpptr=ptr;
-  for (n=1; (n < maxlen) && (encore) ; n++) {
-    if ( (rc = read (fd, &c, 1)) ==1) {
-      *tmpptr++ =c;
-      if (c == '\n')  /* fin de ligne atteinte */
-	{encore =0; retvalue = n;}
-    }
-    else if (rc ==0) {  /* plus rien à lire */
-      encore = 0;
-      if (n==1) retvalue = 0;  /* rien a été lu */
-      else retvalue = n;
-    }
-    else { /*rc <0 */
-      if (errno != EINTR) {
-	encore = 0;
-	retvalue = -1;
-      }
-    }
-  }
-  *tmpptr = '\0';  /* pour terminer la ligne */
-  return (retvalue);
-}
