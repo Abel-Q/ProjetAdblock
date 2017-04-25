@@ -43,23 +43,19 @@ int main(int argc, char** argv){
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
 
-
 	/*
 		Création de la liste noir
 	*/
-
 	Liste * liste;
 	liste = creationBlackliste("./BlacklistTest.txt");
 
 	/*
 		Ouvrir une socket (a tcp socket)
 	*/
-
 	if((serverSocket=socket(AF_INET,SOCK_STREAM,0))<0){
 		perror("servecho : probleme socket \n");
 		exit(2);
 	}
-
 
 	/*
 		On lie la socket a l'adresse
@@ -74,17 +70,11 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 
-
-	//listen et cfg du nb de connexion pending
 	if(listen(serverSocket,SOMAXCONN) <0){
 		perror("servecho: erreur listen\n");
 		exit(1);
 	}
 
-
-	//Accept
-
-	//la structure cli_add permettra de recuperer les donnees du client (adresse ip et port)
 	clilen = sizeof(cli_addr);
 	clientSocket = accept(serverSocket,(struct sockaddr *) &cli_addr, (socklen_t *)&clilen);
 	if(clientSocket <0){
@@ -92,10 +82,7 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 
-
-
 	while((retread=recv(clientSocket,fromNav,sizeof(fromNav),0))>0){
-
 		//vérification de l'host
 		int correctHost;
 		correctHost = filtre(liste,fromNav);
@@ -123,12 +110,9 @@ int main(int argc, char** argv){
 			host[j-6] = buffer[j];
 
 		host[j-6+1] = '\0';
-
 		printf("host : %s\n", host);
 		
 		s = getaddrinfo(host,"80",&hints,&result);
-		printf("\n%d",s);
-
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
     		sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
@@ -146,8 +130,6 @@ int main(int argc, char** argv){
 			}else{
 				break;
 			}
-
-
 		}
 		//on s'assure qu'on a au moins trouver une adresse à contacter
 		if(rp==NULL){
@@ -155,11 +137,8 @@ int main(int argc, char** argv){
 			exit(1);
 		}
 
-
 		freeaddrinfo(result);//on en a plus besoin
-
 		printf("\n envoi de la requête au serveur");
-
 		n = send(sfd,fromNav,sizeof(fromNav),0);
 		if(n==-1){
 			perror("probleme send");
@@ -168,7 +147,6 @@ int main(int argc, char** argv){
 			close(sfd);
 			exit(errno);
 		}
-
 
 		//reception du retour du serveur
 		printf("\n récupération de la reponse du serveur");

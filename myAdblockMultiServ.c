@@ -46,7 +46,6 @@ int main (int argc,char *argv[])
 	/*
 	Création de la liste noir
 	*/
-
 	Liste * liste;
 	liste = creationBlackliste("./BlacklistTest.txt");
 
@@ -65,7 +64,6 @@ int main (int argc,char *argv[])
 	    	exit(1);
 	}
 
-
 	/*
 	 * Ouvrir une socket (a TCP socket)
 	 */
@@ -83,7 +81,6 @@ int main (int argc,char *argv[])
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(atoi(argv[1]));
 
-
 	if (bind(sockfd,(struct sockaddr *)&serv_addr, sizeof(serv_addr) ) <0) {
 	   	perror ("servmulti : erreur bind\n");
 	   	exit (1);
@@ -95,106 +92,98 @@ int main (int argc,char *argv[])
 	}
 
  	for (;;) {
-	
-	
-	
-
 		clilen = sizeof(cli_addr);
 		newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
 		childpid = fork();
 
 		if(childpid == 0){
-				/*
-				  myAdblock
-				*/
+			/*
+			  myAdblock
+			*/
+			while((retread=recv(newsockfd,fromNav,sizeof(fromNav),0))>0){
+				printf("recv\n");
+				//vérification de l'host
+				int correctHost;
+				correctHost = filtre(liste,fromNav);
+				printf("correctHost : %d\n", correctHost);
+				printf("fromNav: %s --- fin\n",fromNav );
+				//récupération de l'adresse ip du serveur cherché
+				struct addrinfo hints;
+				struct addrinfo *result = NULL;
+				struct addrinfo *rp;
 
-				while((retread=recv(newsockfd,fromNav,sizeof(fromNav),0))>0){
-								printf("recv\n");
-					  //vérification de l'host
-					  int correctHost;
-					  correctHost = filtre(liste,fromNav);
-					  printf("correctHost : %d\n", correctHost);
-					  printf("fromNav: %s --- fin\n",fromNav );
+				memset(&hints, 0, sizeof(struct addrinfo));
+				hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+				hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+					  
+				char host[MAXLINE];
+				memset(&host,0,MAXLINE);
+				unsigned short k = 0,j=0;
+				char *buffer = strstr(fromNav,"Host: ");
 
-					  //récupération de l'adresse ip du serveur cherché
-					  struct addrinfo hints;
-					  struct addrinfo *result = NULL;
-					  struct addrinfo *rp;
+				while(buffer[k] != '\n')
+					k++;
+	
+				for(j = 6; j<k-1;j++)
+					host[j-6] = buffer[j];
 
-					  memset(&hints, 0, sizeof(struct addrinfo));
-					  hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-					  hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-					  strcpy(host,get_host(fromNav));
-					  printf("%s\n", host);
-					  s = getaddrinfo(host,"80",&hints,&result);
-					  printf("%d",s);
+				host[j-6+1] = '\0';
 
+				printf("host : %s\n", host);
+				s = getaddrinfo(host,"80",&hints,&result);
 
-					  for (rp = result; rp != NULL; rp = rp->ai_next) {
-						sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
-						  //création d'une socket
-						    if ((sfd = socket(rp->ai_family, rp->ai_socktype,
-							    rp->ai_protocol)) == -1) {
-							    perror("socket");
-							    continue;
-							}
-						    //connection avec le serveur
-						    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == -1) {
-							  perror("connect");
-						      close(sfd);
-						      continue;
-						    }else{
-						      break;
-						    }
-
-
-					  }
-					  //on s'assure qu'on a au moins trouver une adresse à contacter
-					  if(rp==NULL){
-					    perror("erreur getaddrinfo");
-					    exit(1);
-					  }
-
-
-					  freeaddrinfo(result);//on en a plus besoin
-
-					  printf("\n envoi de la requête au serveur");
-
-					  n = send(sfd,fromNav,sizeof(fromNav),0);
-					  if(n==-1){
-					    perror("probleme send");
-					    close(sockfd);
-					    close(newsockfd);
-					    close(sfd);
-					    exit(errno);
-					  }
-
-
-					  //reception du retour du serveur
-
-					  printf("\n récupération de la reponse du serveur");
-
-					  memset(fromServ,'\0',sizeof(fromServ));
-					  int i = 0;
-					  while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
-					    fromServ[n] = '\0';
-
-					    if (correctHost !=0){
-					      strcpy(fromServ,"pub");
-					    }
-					    i++;
-					    printf("\n%s\n",fromServ);
-					    printf("\n\n%d",i);
-					    send(newsockfd,fromServ,sizeof(fromServ),0);
-					    memset(fromServ,'\0',sizeof(fromServ));
-					  }
-						
-					  close(sfd);
-
-					  break;
+				for (rp = result; rp != NULL; rp = rp->ai_next) {
+					sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
+					//création d'une socket
+					if ((sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol)) == -1) {
+						perror("socket");
+						continue;
+					}
+					//connection avec le serveur
+					if (connect(sfd, rp->ai_addr, rp->ai_addrlen) == -1) {
+						perror("connect");
+						close(sfd);
+						continue;
+					}else{
+						break;
+					}
 				}
+				//on s'assure qu'on a au moins trouver une adresse à contacter
+				if(rp==NULL){
+					perror("erreur getaddrinfo");
+					exit(1);
+				}
+				freeaddrinfo(result);//on en a plus besoin
+
+				printf("\n envoi de la requête au serveur");
+				n = send(sfd,fromNav,sizeof(fromNav),0);
+				if(n==-1){
+					perror("probleme send");
+					close(sockfd);
+					close(newsockfd);
+					close(sfd);
+					exit(errno);
+				}
+
+				//reception du retour du serveur
+				printf("\n récupération de la reponse du serveur");
+				memset(fromServ,'\0',sizeof(fromServ));
+				int i = 0;
+				while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
+					fromServ[n] = '\0';
+					if (correctHost !=0){
+						strcpy(fromServ,"pub");
+					}
+					i++;
+					printf("\n%s\n",fromServ);
+					send(newsockfd,fromServ,sizeof(fromServ),0);
+					memset(fromServ,'\0',sizeof(fromServ));
+				}
+				close(sfd);
+				break;
+			}
 				
-					_exit(0);
+			_exit(0);
 
 		}else{
 			close(newsockfd);
