@@ -7,6 +7,8 @@ et de client, lorsqu’il prend contact avec le serveur et qu’il réceptionne 
 ---- Compilation ----
 
 Un Makefile est disponible, utiliser la commande make.
+Si vous souhaitez exécuter le proxy mono-client, assurez vous que les lignes pour compiler le proxy multi-client soit mise en commentaire et que celle pour le mono-client ne le soit pas.
+Si vous souhaitez exécuter le proxy multi-client, réalisez le processus inverse. 
 
 ---- Configuration ----
 
@@ -17,7 +19,7 @@ Dans http proxy renseigner l'adresse ip : 127.0.0.1 et le port 8080
 
 - Une version mono-client disponible et fonctionnelle.
 
-- Une version mulit-client disponible mais non fonctionnelle.
+- Une version mulit-client disponible et fonctionnelle.
 
 ---- Test ----
 
