@@ -111,7 +111,7 @@ int main(int argc, char** argv){
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
 
-		char *host = malloc(sizeof(host));
+		char *host = (char *)malloc(256 * sizeof(char));
 		host = get_host(fromNav);
 		printf("host : %s\n", host);
 		//char *test="www.01net.com";
