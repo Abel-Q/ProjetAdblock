@@ -111,14 +111,23 @@ int main(int argc, char** argv){
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
 
-		char *host = (char *)malloc(256 * sizeof(char));
-		host = get_host(fromNav);
-		printf("host : %s\n", host);
-		//char *test="www.01net.com";
+		char host[MAXLINE];
+		memset(&host,0,MAXLINE);
+		unsigned short k = 0,j=0;
+		char *buffer = strstr(fromNav,"Host: ");
 
+		while(buffer[k] != '\n')
+			k++;
+	
+		for(j = 6; j<k-1;j++)
+			host[j-6] = buffer[j];
+
+		host[j-6+1] = '\0';
+
+		printf("host : %s\n", host);
+		
 		s = getaddrinfo(host,"80",&hints,&result);
 		printf("\n%d",s);
-		free(host);
 
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -162,9 +171,7 @@ int main(int argc, char** argv){
 
 
 		//reception du retour du serveur
-
 		printf("\n récupération de la reponse du serveur");
-
 		memset(fromServ,'\0',sizeof(fromServ));
 		int i = 0;
 		while((n=recv(sfd,fromServ,sizeof(fromServ),0)) > 0){
@@ -179,18 +186,10 @@ int main(int argc, char** argv){
 			send(clientSocket,fromServ,sizeof(fromServ),0);
 			memset(fromServ,'\0',sizeof(fromServ));
 		}
-
 		close(sfd);
-
 		break;
-
-
-
 	}
-
 	//fin while
 	close(serverSocket);
 	close(clientSocket);
-
-
 }
