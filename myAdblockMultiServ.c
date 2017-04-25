@@ -34,7 +34,7 @@ char * get_host(char * httpRequest){
 	return host;
 }
 
-usage(){
+int usage(){
   printf("usage : servmulti numero_port_serveur\n");
 }
 
@@ -52,7 +52,6 @@ int main (int argc,char *argv[])
 	int retread,s, sfd;
 	char fromNav[MAXLINE];
 	char fromServ[MAXLINE];
-	char host[MAXLINE];
 
 	int sockfd, n, newsockfd, childpid;
 	struct sockaddr_in  serv_addr, cli_addr;
@@ -101,7 +100,6 @@ int main (int argc,char *argv[])
 			  myAdblock
 			*/
 			while((retread=recv(newsockfd,fromNav,sizeof(fromNav),0))>0){
-				printf("recv\n");
 				//vérification de l'host
 				int correctHost;
 				correctHost = filtre(liste,fromNav);
@@ -129,20 +127,8 @@ int main (int argc,char *argv[])
 
 				host[j-6+1] = '\0';
 				printf("host : %s\n", host);
-				//
-				//a partir de la requete on determine si on est en http ou https
-				char numport[MAXLINE];
-				if(strstr(fromNav,"GET ") != NULL){
-					printf("\nget\n");
-					strcpy(numport,"80");
-				}else if(strstr(fromNav,"CONNECT ") != NULL){
-					printf("\nconnect\n");
-					strcpy(numport,"443");
-				}else{
-					break;
-				}
-				//	
-				s = getaddrinfo(host,numport,&hints,&result);
+				
+				s = getaddrinfo(host,"80",&hints,&result);
 
 				for (rp = result; rp != NULL; rp = rp->ai_next) {
 					sfd = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
