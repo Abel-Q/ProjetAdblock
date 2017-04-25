@@ -97,7 +97,7 @@ int main(int argc, char** argv){
 		memset(&hints, 0, sizeof(struct addrinfo));
 		hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
 		hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-
+		//a partir de la requete on extrait le host
 		char host[MAXLINE];
 		memset(&host,0,MAXLINE);
 		unsigned short k = 0,j=0;
@@ -112,6 +112,18 @@ int main(int argc, char** argv){
 		host[j-6+1] = '\0';
 		printf("host : %s\n", host);
 		
+		//a partir de la requete on determine si on est en http ou https
+		char numport[MAXLINE];
+		if(strstr(fromNav,"GET ") != NULL){
+			printf("\nget\n");
+			strcpy(numport,"80");
+		}else if(strstr(fromNav,"CONNECT ") != NULL){
+			printf("\nconnect\n");
+			strcpy(numport,"443");
+		}else{
+			break;
+		}
+		//
 		s = getaddrinfo(host,"80",&hints,&result);
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
